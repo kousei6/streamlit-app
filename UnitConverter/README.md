@@ -1,4 +1,4 @@
-# ⚖UnitConverter
+# UnitConverter
 
 このアプリケーションは、[Streamlit](https://streamlit.io/) を使用して構築された、シンプルで使いやすい単位換算ツールです。長さや重さなど、さまざまな単位を相互にリアルタイムで換算できます。
 
