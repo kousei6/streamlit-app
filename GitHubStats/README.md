@@ -51,5 +51,5 @@ URLは通常 `http://localhost:8501` となります。
 
 この動画は、GitHub APIを使用してリポジトリの詳細を取得する方法をREST APIの観点から解説しているため、今回のアプリの根幹となる技術を理解するのに役立ちます。
 
-[GitHub APIでリポジトリを取得する方法](https://www.youtube.com/watch?v=BRLowzzpyCI)
-http://googleusercontent.com/youtube_content/0
+[GitHub APIでリポジトリを取得する方法](https://youtu.be/BRLowzzpyCI)
+
