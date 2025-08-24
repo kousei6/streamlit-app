@@ -1,4 +1,4 @@
-## CodeFormatter
+## AutoCodeFormatter
 
 ### 概要
 
