@@ -18,7 +18,7 @@ def create_card_deck(num_pairs):
     """
     指定されたペア数のカードデッキを作成しシャッフルする
     """
-    emojis = ["🍎", "🍊", "🍋", "🍉", "🍇", "🍓", "🍒", "🍑", "🍍", "🥥", "🥝", "🥑"]
+    emojis = ["🍎", "�", "🍋", "🍉", "🍇", "🍓", "🍒", "🍑", "🍍", "🥥", "🥝", "🥑"]
     selected_emojis = random.sample(emojis, num_pairs)
     card_values = selected_emojis * 2
     random.shuffle(card_values)
@@ -38,8 +38,12 @@ def flip_card(index):
     カードをめくる処理
     """
     card = st.session_state.cards[index]
-    if not card['is_flipped'] and not st.session_state.game_started:
-        return # ゲームが始まっていない場合は何もしない
+    if not st.session_state.game_started: # ゲームが始まっていない場合は何もしない
+        return 
+
+    # すでにめくられている、またはマッチ済みのカードは再度めくれない
+    if card['is_flipped'] or card['is_matched']:
+        return
 
     if len(st.session_state.flipped_cards) < 2:
         card['is_flipped'] = True
@@ -48,7 +52,7 @@ def flip_card(index):
         # 2枚めくった後の判定
         if len(st.session_state.flipped_cards) == 2:
             st.session_state.message = "判定中..."
-            st.experimental_rerun() # UIを更新して、めくられたカードを表示
+            st.rerun() # UIを更新して、めくられたカードを表示
 
 def check_match():
     """
@@ -90,20 +94,31 @@ st.write("同じ絵文字のペアを全て見つけてください。")
 if st.session_state.game_started:
     if st.button("リセットしてもう一度"):
         st.session_state.game_started = False
-        st.experimental_rerun()
+        st.rerun() # st.experimental_rerun() を st.rerun() に変更
 else:
     num_pairs_choice = st.selectbox("ゲームの難易度を選択してください:", [4, 6, 8, 10], index=1, format_func=lambda x: f"{x}ペア")
     if st.button("ゲーム開始"):
         create_card_deck(num_pairs_choice)
-        st.experimental_rerun()
+        st.rerun() # st.experimental_rerun() を st.rerun() に変更
 
 st.info(st.session_state.message)
 
 # カードの表示
 if st.session_state.game_started:
-    cols = st.columns(4) # 4枚のカードを1行に表示
+    # カードの数に応じて列数を調整
+    num_cards = len(st.session_state.cards)
+    cols_per_row = 4
+    if num_cards <= 6: # 例えば、6枚以下の場合は3列に
+        cols_per_row = 3
+    elif num_cards <= 8: # 8枚以下の場合は4列に
+        cols_per_row = 4
+    else: # それ以上の場合は5列など
+        cols_per_row = 5 # 必要に応じて調整
+
+    cols = st.columns(cols_per_row) # 1行に表示するカードの列数
+
     for i, card in enumerate(st.session_state.cards):
-        col = cols[i % 4]
+        col = cols[i % cols_per_row]
         
         if card['is_matched']:
             display_text = card['value']
@@ -121,11 +136,13 @@ if st.session_state.game_started:
                 key=f"card_{i}",
                 on_click=flip_card,
                 args=(i,),
+                # 2枚めくられている間は他のカードをめくれないようにする
                 disabled=button_disabled or len(st.session_state.flipped_cards) == 2
             )
             
     # めくられたカードが2枚になったら判定を実行
     if len(st.session_state.flipped_cards) == 2:
         check_match()
+        # 勝利判定後、ゲームが続行する場合は再描画
         if not check_win():
-            st.experimental_rerun()
+            st.rerun() # st.experimental_rerun() を st.rerun() に変更
