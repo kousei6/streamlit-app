@@ -51,7 +51,4 @@ streamlit run app.py
   - **Python**
   - **Streamlit**
 
-<!-- end list -->
 
-```
-```
