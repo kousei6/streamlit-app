@@ -104,7 +104,7 @@ st.write("2枚の画像を見比べて、異なる箇所を全てクリックし
 # ゲームの開始・リセットボタン
 if st.button("新しいゲームを始める"):
     create_difference_images()
-    st.rerun() # st.experimental_rerun() を st.rerun() に変更
+    st.rerun()
 
 if st.session_state.image_loaded:
     if st.session_state.game_over:
