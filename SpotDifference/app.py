@@ -17,6 +17,8 @@ if 'clicked_spots' not in st.session_state:
     st.session_state.clicked_spots = []
 if 'images' not in st.session_state:
     st.session_state.images = {}
+if 'image_paths' not in st.session_state:
+    st.session_state.image_paths = {'A': "image_A.png", 'B': "image_B.png"}
 
 def create_difference_images():
     """
@@ -28,18 +30,18 @@ def create_difference_images():
     st.session_state.clicked_spots = []
     
     # 既存のデモ画像を削除（再生成のため）
-    if os.path.exists("image_A.png"):
-        os.remove("image_A.png")
-    if os.path.exists("image_B.png"):
-        os.remove("image_B.png")
+    for path in st.session_state.image_paths.values():
+        if os.path.exists(path):
+            os.remove(path)
 
     # サンプル画像を作成
     width, height = 600, 400
     img_A = Image.new('RGB', (width, height), 'white')
     draw_A = ImageDraw.Draw(img_A)
-    draw_A.rectangle((100, 100, 200, 200), fill='red')
-    draw_A.rectangle((300, 150, 400, 250), fill='blue')
-    draw_A.rectangle((500, 200, 550, 300), fill='green')
+    # 基準となる図形を描画
+    draw_A.rectangle((100, 100, 200, 200), fill='red') # 違い1の元
+    draw_A.rectangle((300, 150, 400, 250), fill='blue') # 違い2の元
+    draw_A.rectangle((500, 200, 550, 300), fill='green') # 違い3の元
     
     # img_Bはimg_Aからコピーし、違いを作成
     img_B = img_A.copy()
@@ -48,24 +50,24 @@ def create_difference_images():
     # 違いを作成
     # 1. 四角形の色を変える
     draw_B.rectangle((100, 100, 200, 200), fill='orange')
-    # 2. 四角形を消す
+    # 2. 四角形を消す (背景色で上書き)
     draw_B.rectangle((300, 150, 400, 250), fill='white')
     # 3. 四角形の位置を変える
-    draw_B.rectangle((525, 200, 575, 300), fill='green')
+    draw_B.rectangle((525, 200, 575, 300), fill='green') # 元の位置から右に移動
 
-    img_A.save("image_A.png")
-    img_B.save("image_B.png")
+    img_A.save(st.session_state.image_paths['A'])
+    img_B.save(st.session_state.image_paths['B'])
 
     # 正解座標の定義 (中心座標と許容範囲)
     st.session_state.total_differences = 3
     st.session_state.images = {
-        'A': 'image_A.png',
-        'B': 'image_B.png'
+        'A': st.session_state.image_paths['A'],
+        'B': st.session_state.image_paths['B']
     }
     st.session_state.difference_locs = {
-        'red_to_orange': {'x': 150, 'y': 150, 'tolerance': 50},
-        'blue_to_white': {'x': 350, 'y': 200, 'tolerance': 50},
-        'green_shift': {'x': 550, 'y': 250, 'tolerance': 50},
+        'red_to_orange': {'x': 150, 'y': 150, 'tolerance': 50}, # 違い1 (色変更)
+        'blue_to_white': {'x': 350, 'y': 200, 'tolerance': 50}, # 違い2 (削除)
+        'green_shift': {'x': 550, 'y': 250, 'tolerance': 50},   # 違い3 (位置変更後の中心)
     }
     st.session_state.image_loaded = True
 
@@ -73,21 +75,27 @@ def check_click(x, y):
     """
     クリックされた座標が正解エリア内にあるかチェックする
     """
+    if st.session_state.game_over:
+        return
+
+    found_correct = False
     for key, loc in st.session_state.difference_locs.items():
         if key not in st.session_state.correct_spots:
             dist = np.sqrt((x - loc['x'])**2 + (y - loc['y'])**2)
             if dist <= loc['tolerance']:
                 st.session_state.correct_spots.add(key)
                 st.session_state.clicked_spots.append({'x': x, 'y': y, 'color': 'green'})
+                found_correct = True
                 if len(st.session_state.correct_spots) == st.session_state.total_differences:
                     st.session_state.game_over = True
                     st.balloons()
-                st.experimental_rerun()
-                return True
+                st.rerun() # UIを更新
+                return
     
-    st.session_state.clicked_spots.append({'x': x, 'y': y, 'color': 'red'})
-    st.experimental_rerun()
-    return False
+    # 正解でなかった場合
+    if not found_correct:
+        st.session_state.clicked_spots.append({'x': x, 'y': y, 'color': 'red'})
+        st.rerun() # UIを更新
 
 # ----- Streamlit UI -----
 st.title("間違い探しゲーム 🔎")
@@ -96,7 +104,7 @@ st.write("2枚の画像を見比べて、異なる箇所を全てクリックし
 # ゲームの開始・リセットボタン
 if st.button("新しいゲームを始める"):
     create_difference_images()
-    st.experimental_rerun()
+    st.rerun() # st.experimental_rerun() を st.rerun() に変更
 
 if st.session_state.image_loaded:
     if st.session_state.game_over:
